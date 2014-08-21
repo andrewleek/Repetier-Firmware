@@ -2083,20 +2083,25 @@ long PrintLine::bresenhamStep() // version for cartesian printer
             return(wait); // waste some time for path optimization to fill up
         } // End if WARMUP
         //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
-#ifdef XY_GANTRY
+#ifdef XZ_GANTRY
+        if(cur->isXOrZMove())
+        {
+            Printer::enableXStepper();
+            Printer::enableZStepper();
+        }
+        if(cur->isYMove()) Printer::enableYStepper();
+#elif defined(XY_GANTRY)
         if(cur->isXOrYMove())
         {
             Printer::enableXStepper();
             Printer::enableYStepper();
         }
+        if(cur->isZMove()) Printer::enableZStepper();
 #else
         if(cur->isXMove()) Printer::enableXStepper();
         if(cur->isYMove()) Printer::enableYStepper();
+        if(cur->isZMove()) Printer::enableZStepper();
 #endif
-        if(cur->isZMove())
-        {
-            Printer::enableZStepper();
-        }
         if(cur->isEMove()) Extruder::enable();
         cur->fixStartAndEndSpeed();
         HAL::allowInterrupts();
@@ -2109,11 +2114,19 @@ long PrintLine::bresenhamStep() // version for cartesian printer
         Printer::stepNumber=0;
         Printer::timer = 0;
         HAL::forbidInterrupts();
+        
         //Determine direction of movement,check if endstop was hit
-#if !defined(XY_GANTRY)
-        Printer::setXDirection(cur->isXPositiveMove());
+#ifdef XZ_GANTRY
+        long gdx = (cur->dir & 1 ? cur->delta[0] : -cur->delta[0]); // Compute signed difference in steps
+        long gdz = (cur->dir & 4 ? cur->delta[2] : -cur->delta[2]); // I have changed the cur->dir & 2 to cur->dir & 4, I also changed delta[1] to delta[2] - if there are bugs i would look here first
+        Printer::setXDirection(gdx+gdz>=0);
+#if DRIVE_SYSTEM==8
+        Printer::setZDirection(gdx>gdz);
+#elif DRIVE_SYSTEM==9
+        Printer::setZDirection(gdx<=gdz);
+#endif
         Printer::setYDirection(cur->isYPositiveMove());
-#else
+#elif defined(XY_GANTRY)
         long gdx = (cur->dir & 1 ? cur->delta[0] : -cur->delta[0]); // Compute signed difference in steps
         long gdy = (cur->dir & 2 ? cur->delta[1] : -cur->delta[1]);
         Printer::setXDirection(gdx+gdy>=0);
@@ -2122,8 +2135,12 @@ long PrintLine::bresenhamStep() // version for cartesian printer
 #elif DRIVE_SYSTEM==2
         Printer::setYDirection(gdx<=gdy);
 #endif
-#endif
         Printer::setZDirection(cur->isZPositiveMove());
+#else
+        Printer::setXDirection(cur->isXPositiveMove());
+        Printer::setYDirection(cur->isYPositiveMove());
+        Printer::setZDirection(cur->isZPositiveMove());
+#endif
 #if defined(USE_ADVANCE)
         if(!Printer::isAdvanceActivated()) // Set direction if no advance/OPS enabled
 #endif
@@ -2213,6 +2230,10 @@ long PrintLine::bresenhamStep() // version for cartesian printer
 #endif
                 }
             }
+#if defined(XZ_GANTRY)
+            Printer::executeXZGantrySteps();
+#endif
+
             Printer::insertStepperHighDelay();
 #if defined(USE_ADVANCE)
             if(!Printer::isAdvanceActivated()) // Use interrupt for movement

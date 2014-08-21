@@ -160,6 +160,10 @@ public:
     static int8_t motorX;
     static int8_t motorY;
 #endif
+#ifdef XZ_GANTRY
+    static int8_t motorX;
+    static int8_t motorZ;
+#endif
 #ifdef DEBUG_SEGMENT_LENGTH
     static float maxRealSegmentLength;
 #endif
@@ -530,6 +534,47 @@ public:
         }
 #endif
     }
+    static inline void executeXZGantrySteps()
+    {
+#if defined(XZ_GANTRY)
+        if(motorX <= -2)
+        {
+            ANALYZER_ON(ANALYZER_CH2);
+            WRITE(X_STEP_PIN,HIGH);
+#if FEATURE_TWO_XSTEPPER
+            WRITE(X2_STEP_PIN,HIGH);
+#endif
+            motorX += 2;
+        }
+        else if(motorX >= 2)
+        {
+            ANALYZER_ON(ANALYZER_CH2);
+            WRITE(X_STEP_PIN,HIGH);
+#if FEATURE_TWO_XSTEPPER
+            WRITE(X2_STEP_PIN,HIGH);
+#endif
+            motorX -= 2;
+        }
+        if(motorZ <= -2)
+        {
+            //ANALYZER_ON(ANALYZER_CH3); // I dont think i can use these as they are for the y - possible bug area though
+            WRITE(Z_STEP_PIN,HIGH);
+#if FEATURE_TWO_ZSTEPPER
+            WRITE(Z2_STEP_PIN,HIGH);
+#endif
+            motorZ += 2;
+        }
+        else if(motorZ >= 2)
+        {
+            //ANALYZER_ON(ANALYZER_CH3); // I dont think i can use these as they are for the y - possible bug area though
+            WRITE(Z_STEP_PIN,HIGH);
+#if FEATURE_TWO_ZSTEPPER
+            WRITE(Z2_STEP_PIN,HIGH);
+#endif
+            motorZ -= 2;
+        }
+#endif
+    }
     static inline void endXYZSteps()
     {
         WRITE(X_STEP_PIN,LOW);
@@ -578,17 +623,25 @@ public:
     }
     static inline void disableAllowedStepper()
     {
-#ifdef XY_GANTRY
+#ifdef XZ_GANTRY
+        if(DISABLE_X && DISABLE_Z)
+        {
+            disableXStepper();
+            disableZStepper();
+        }
+        if(DISABLE_Y) disableYStepper();
+#elif defined(XY_GANTRY)
         if(DISABLE_X && DISABLE_Y)
         {
             disableXStepper();
             disableYStepper();
         }
+        if(DISABLE_Z) disableZStepper();
 #else
         if(DISABLE_X) disableXStepper();
         if(DISABLE_Y) disableYStepper();
-#endif
         if(DISABLE_Z) disableZStepper();
+#endif
     }
     static inline float realXPosition()
     {

@@ -145,6 +145,10 @@ float Printer::memoryF;
 int8_t Printer::motorX;
 int8_t Printer::motorY;
 #endif
+#ifdef XZ_GANTRY
+int8_t Printer::motorX;
+int8_t Printer::motorZ;
+#endif
 #ifdef DEBUG_SEGMENT_LENGTH
     float Printer::maxRealSegmentLength = 0;
 #endif
@@ -740,6 +744,10 @@ void Printer::setup()
 #ifdef XY_GANTRY
     Printer::motorX = 0;
     Printer::motorY = 0;
+#endif
+#ifdef XZ_GANTRY
+    Printer::motorX = 0;
+    Printer::motorZ = 0;
 #endif
 
 #if STEPPER_CURRENT_CONTROL!=CURRENT_CONTROL_MANUAL

@@ -148,6 +148,10 @@ usage or for seraching for memory induced errors. Switch it off for production, 
 #define XY_GANTRY
 #endif
 
+#if DRIVE_SYSTEM==8 || DRIVE_SYSTEM==9
+#define XZ_GANTRY
+#endif
+
 //Step to split a cirrcle in small Lines
 #ifndef MM_PER_ARC_SEGMENT
 #define MM_PER_ARC_SEGMENT 1

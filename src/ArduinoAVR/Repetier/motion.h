@@ -126,6 +126,10 @@ typedef struct
     {
         return (dir & 64);
     }
+    inline bool isXOrZMove()
+    {
+        return dir & 80;
+    }
     inline bool isEMove()
     {
         return (dir & 128);
@@ -397,6 +401,10 @@ public:
     {
         return (dir & 64);
     }
+    inline bool isXOrZMove()
+    {
+        return dir & 80;
+    }
     inline bool isEMove()
     {
         return (dir & 128);
@@ -496,7 +504,7 @@ public:
     inline void startXStep()
     {
         ANALYZER_ON(ANALYZER_CH6);
-#if DRIVE_SYSTEM==0 || !defined(XY_GANTRY)
+#if DRIVE_SYSTEM==0 || (!defined(XY_GANTRY) && !defined(XZ_GANTRY))
         ANALYZER_ON(ANALYZER_CH2);
         WRITE(X_STEP_PIN,HIGH);
 #if FEATURE_TWO_XSTEPPER
@@ -525,6 +533,30 @@ public:
         {
             Printer::motorX--;
             Printer::motorY++;
+        }
+#endif
+#if DRIVE_SYSTEM==8
+        if(isXPositiveMove())
+        {
+            Printer::motorX++;
+            Printer::motorZ++;
+        }
+        else
+        {
+            Printer::motorX--;
+            Printer::motorZ--;
+        }
+#endif
+#if DRIVE_SYSTEM==9
+        if(isXPositiveMove())
+        {
+            Printer::motorX++;
+            Printer::motorZ--;
+        }
+        else
+        {
+            Printer::motorX--;
+            Printer::motorZ++;
         }
 #endif
 #endif
@@ -574,10 +606,37 @@ public:
     }
     inline void startZStep()
     {
+#if DRIVE_SYSTEM==0 || !defined(XZ_GANTRY)
         WRITE(Z_STEP_PIN,HIGH);
 #if FEATURE_TWO_ZSTEPPER
         WRITE(Z2_STEP_PIN,HIGH);
 #endif
+#else
+#if DRIVE_SYSTEM==8
+        if(isZPositiveMove())
+        {
+            Printer::motorX++;
+            Printer::motorZ--;
+        }
+        else
+        {
+            Printer::motorX--;
+            Printer::motorZ++;
+        }
+#endif
+#if DRIVE_SYSTEM==9
+        if(isZPositiveMove())
+        {
+            Printer::motorX++;
+            Printer::motorZ++;
+        }
+        else
+        {
+            Printer::motorX--;
+            Printer::motorZ--;
+        }
+#endif
+#endif // XZ_GANTRY
     }
     void updateStepsParameter();
     inline float safeSpeed();
